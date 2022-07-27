@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -27,6 +28,7 @@ namespace Alura.ListaLeitura.App
             builder.MapRoute("Cadastro/NovoLivro/{nome}/{autor}", NovoLivroParaLer);
             builder.MapRoute("Livros/Detalhes/{id:int}", ExibeDetalhes);
             builder.MapRoute("Cadastro/NovoLivro", ExibeFormulario);
+            builder.MapRoute("Cadastro/Incluir", ProcessarFormulario);
 
             var rotas = builder.Build();
 
@@ -35,17 +37,32 @@ namespace Alura.ListaLeitura.App
             //app.Run(Roteamento);
         }
 
+        private Task ProcessarFormulario(HttpContext context)
+        {
+            var livro = new Livro()
+            {
+                Titulo = context.Request.Query["titulo"].First(),
+                Autor = context.Request.Query["autor"].First()
+            };
+            var repo = new LivroRepositorioCSV();
+            repo.Incluir(livro);
+            return context.Response.WriteAsync("Um livro foi adicionado com sucesso!");
+        }
+
         private Task ExibeFormulario(HttpContext context)
         {
-            var html = @"
-                <html>
-                    <form>
-                        <input/>
-                        <input/>
-                        <button>Gravar</button>
-                    </form>
-                </html>";
+            var html = CarregaArquivoHtml("formulario");
             return context.Response.WriteAsync(html);
+        }
+
+        private string CarregaArquivoHtml(string nomeArquivo)
+        {
+            var nomeCompletoArquivo = $"C:\\Users\\Talles\\Downloads\\Alura.ListaLeitura\\Alura.ListaLeitura.App\\HTML\\{nomeArquivo}.html";
+            using (var arquivo = File.OpenText(nomeCompletoArquivo))
+            {
+                return arquivo.ReadToEnd();
+            }
+            
         }
 
         private Task ExibeDetalhes(HttpContext context)
